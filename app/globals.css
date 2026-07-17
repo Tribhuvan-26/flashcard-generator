@@ -1,19 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light dark;
+  --desk: #e7e9ee;
+  --desk-2: #dfe2e9;
+  --card: #fcfbf6;
+  --ink: #17171c;
+  --muted: #6b7280;
+  --line: #d6d9e0;
+  --accent: #4338ca;
+  --accent-soft: #ecebff;
+  --marker: #fde047;
+  --rule: rgba(67, 56, 202, 0.09);
+  --margin: #ef5a6f;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, #eef0f5 0%, transparent 60%),
+    linear-gradient(180deg, var(--desk) 0%, var(--desk-2) 100%);
+  background-attachment: fixed;
 }
 
+.font-display {
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* Highlighter swipe behind a word */
+.marker {
+  background: linear-gradient(180deg, transparent 58%, var(--marker) 58% 92%, transparent 92%);
+  padding: 0 0.1em;
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- Flashcard: a ruled index card ---- */
 .perspective {
-  perspective: 1200px;
+  perspective: 1600px;
 }
 .flip-inner {
   transform-style: preserve-3d;
-  transition: transform 0.5s;
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .flip-inner.flipped {
   transform: rotateY(180deg);
@@ -24,4 +65,66 @@ body {
 }
 .flip-back {
   transform: rotateY(180deg);
+}
+
+.index-card {
+  background-color: var(--card);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 31px,
+    var(--rule) 31px 32px
+  );
+  background-position: 0 76px;
+}
+/* red margin rule */
+.index-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2.75rem;
+  width: 2px;
+  background: var(--margin);
+  opacity: 0.45;
+}
+
+/* Deck depth: stacked cards peeking behind the top one */
+.deck-shadow::after,
+.deck-shadow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: 0 10px 30px -12px rgba(23, 23, 28, 0.35);
+  z-index: -1;
+}
+.deck-shadow::after {
+  transform: translate(10px, 12px) rotate(1.6deg);
+  opacity: 0.7;
+}
+.deck-shadow::before {
+  transform: translate(5px, 6px) rotate(-1deg);
+  opacity: 0.85;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.4s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

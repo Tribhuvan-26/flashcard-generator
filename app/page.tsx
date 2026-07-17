@@ -18,11 +18,14 @@ export default function Home() {
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showHelp, setShowHelp] = useState(true);
+
+  const words = notes.trim() ? notes.trim().split(/\s+/).length : 0;
 
   async function generate() {
     setError("");
     if (!notes.trim()) {
-      setError("Please paste some notes first.");
+      setError("Paste some notes to generate from.");
       return;
     }
     setLoading(true);
@@ -44,28 +47,44 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl p-4 sm:p-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold sm:text-3xl">
-          AI Flashcard Generator
-        </h1>
-        <p className="text-slate-500">
-          Paste technical notes, get interview-ready flashcards.
-        </p>
+    <div className="mx-auto min-h-screen max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+
+      <header className="mb-8 flex items-end justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+            re<span className="marker">call</span>
+          </h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Turn technical notes into interview flashcards.
+          </p>
+        </div>
+        <span className="hidden font-mono text-xs text-[var(--muted)] sm:block">
+          paste → generate → study
+        </span>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Left panel */}
-        <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+        {/* Left: compose */}
+        <section className="flex flex-col gap-5 rounded-2xl border border-black/5 bg-white/70 p-5 shadow-sm backdrop-blur-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
+              Your notes
+            </span>
+            <span className="font-mono text-xs text-[var(--muted)]">
+              {words} {words === 1 ? "word" : "words"}
+            </span>
+          </div>
+
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Paste your interview notes here..."
-            className="h-64 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm focus:border-indigo-500 focus:outline-none"
+            placeholder="Paste your interview notes here — JavaScript, SQL, OS, system design, anything…"
+            className="h-56 w-full resize-y rounded-xl border border-[var(--line)] bg-[var(--card)] p-4 text-sm leading-relaxed shadow-inner placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
           />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Select
+          <div className="grid gap-4">
+            <Segmented
               label="Cards"
               value={count}
               onChange={(v) => setCount(v as Count)}
@@ -75,7 +94,7 @@ export default function Home() {
                 ["20", "20"],
               ]}
             />
-            <Select
+            <Segmented
               label="Difficulty"
               value={difficulty}
               onChange={(v) => setDifficulty(v as Difficulty)}
@@ -85,23 +104,23 @@ export default function Home() {
                 ["mixed", "Mixed"],
               ]}
             />
-            <Select
+            <Segmented
               label="Style"
               value={style}
               onChange={(v) => setStyle(v as CardStyle)}
               options={[
-                ["definition", "Definition"],
-                ["interview", "Interview Questions"],
+                ["definition", "Definitions"],
+                ["interview", "Questions"],
                 ["mixed", "Mixed"],
               ]}
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="mt-1 flex gap-3">
             <button
               onClick={generate}
               disabled={loading}
-              className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
+              className="flex-1 rounded-xl bg-[var(--ink)] px-4 py-3 font-medium text-white shadow-sm transition hover:bg-black active:scale-[0.99] disabled:opacity-60"
             >
               {loading ? "Generating…" : "Generate Flashcards"}
             </button>
@@ -110,37 +129,48 @@ export default function Home() {
                 setNotes("");
                 setError("");
               }}
-              className="rounded-lg border border-slate-300 px-4 py-2.5 font-medium text-slate-700 transition hover:bg-slate-100"
+              className="rounded-xl border border-[var(--line)] px-4 py-3 font-medium text-[var(--ink)] transition hover:bg-white"
             >
-              Clear Notes
+              Clear
             </button>
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="rounded-xl border border-[var(--margin)]/30 bg-[var(--margin)]/10 px-4 py-3 text-sm text-[var(--margin)]">
               {error}
             </p>
           )}
         </section>
 
-        {/* Right panel */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        {/* Right: study */}
+        <section className="flex min-h-[26rem] flex-col rounded-2xl border border-black/5 bg-white/40 p-5 shadow-sm backdrop-blur-sm">
           {cards.length > 0 ? (
-            <FlashcardViewer cards={cards} />
-          ) : (
-            <div className="flex h-full min-h-64 items-center justify-center text-center text-slate-400">
-              {loading
-                ? "Building your flashcards…"
-                : "Your flashcards will appear here."}
+            <div key={cards.length} className="rise flex h-full flex-col">
+              <FlashcardViewer cards={cards} />
             </div>
+          ) : (
+            <EmptyState loading={loading} />
           )}
         </section>
       </div>
-    </main>
+    </div>
   );
 }
 
-function Select({
+function EmptyState({ loading }: { loading: boolean }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+      <div className="deck-shadow relative h-32 w-52 rounded-2xl border border-black/5 index-card shadow-[0_16px_40px_-20px_rgba(23,23,28,0.4)]" />
+      <p className="max-w-xs text-sm text-[var(--muted)]">
+        {loading
+          ? "Shuffling your notes into a deck…"
+          : "Your flashcards land here. Paste notes and hit Generate."}
+      </p>
+    </div>
+  );
+}
+
+function Segmented({
   label,
   value,
   onChange,
@@ -152,19 +182,90 @@ function Select({
   options: [string, string][];
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-slate-600">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-slate-300 px-2 py-2 focus:border-indigo-500 focus:outline-none"
-      >
+    <div className="flex flex-col gap-2">
+      <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-[var(--muted)]">
+        {label}
+      </span>
+      <div className="flex gap-1 rounded-xl border border-[var(--line)] bg-black/[0.03] p-1">
         {options.map(([v, l]) => (
-          <option key={v} value={v}>
+          <button
+            key={v}
+            onClick={() => onChange(v)}
+            className={`flex-1 rounded-lg px-2 py-2 text-sm font-medium transition ${
+              value === v
+                ? "bg-white text-[var(--ink)] shadow-sm"
+                : "text-[var(--muted)] hover:text-[var(--ink)]"
+            }`}
+          >
             {l}
-          </option>
+          </button>
         ))}
-      </select>
-    </label>
+      </div>
+    </div>
+  );
+}
+
+function HelpModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-lg overflow-auto rounded-2xl border border-black/5 bg-[var(--card)] p-7 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
+          Take-home
+        </span>
+        <h2 className="mt-2 font-display text-2xl font-bold">Build the backend</h2>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          The UI is done. Make <b className="text-[var(--ink)]">Generate Flashcards</b>{" "}
+          work by implementing three stubbed files:
+        </p>
+        <ul className="mt-4 space-y-3 text-sm">
+          <FileItem path="lib/prompt.ts">
+            build the LLM prompt from the notes and options.
+          </FileItem>
+          <FileItem path="lib/llm.ts">
+            call an OpenAI-compatible <Code>/chat/completions</Code> API — timeout,
+            error handling, JSON validation, retry-once.
+          </FileItem>
+          <FileItem path="app/api/generate/route.ts">
+            validate input, call the model, return the cards.
+          </FileItem>
+        </ul>
+        <p className="mt-4 text-sm text-[var(--muted)]">
+          Run <Code>npm install</Code>, copy <Code>.env.example</Code> to{" "}
+          <Code>.env.local</Code> with your own API key. Full brief in{" "}
+          <Code>README.md</Code>.
+        </p>
+        <button
+          onClick={onClose}
+          className="mt-6 w-full rounded-xl bg-[var(--ink)] px-4 py-3 font-medium text-white transition hover:bg-black"
+        >
+          Got it — let me build
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FileItem({ path, children }: { path: string; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--marker)] ring-2 ring-[var(--marker)]/30" />
+      <span>
+        <Code>{path}</Code> <span className="text-[var(--muted)]">— {children}</span>
+      </span>
+    </li>
+  );
+}
+
+function Code({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="rounded bg-black/[0.06] px-1.5 py-0.5 font-mono text-[13px] text-[var(--ink)]">
+      {children}
+    </code>
   );
 }
