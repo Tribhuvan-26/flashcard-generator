@@ -27,7 +27,6 @@ export default function FlashcardViewer({ cards }: { cards: Flashcard[] }) {
   const next = () => order.length && go((pos + 1) % order.length);
 
   const shuffle = () => {
-    // Fisher–Yates.
     const a = [...order];
     for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -42,34 +41,39 @@ export default function FlashcardViewer({ cards }: { cards: Flashcard[] }) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between text-sm text-slate-500">
-        <span>
-          Card {pos + 1} of {order.length}
+    <div className="flex h-full flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-xs tracking-wide text-[var(--muted)]">
+          CARD {String(pos + 1).padStart(2, "0")} / {String(order.length).padStart(2, "0")}
         </span>
         <span className="flex gap-2">
-          <Badge>{card.category}</Badge>
-          <Badge>{card.difficulty}</Badge>
+          <Tag>{card.category}</Tag>
+          <Tag accent>{card.difficulty}</Tag>
         </span>
       </div>
 
-      <div className="perspective">
-        <button
-          onClick={() => setFlipped((f) => !f)}
-          className={`flip-inner relative h-72 w-full cursor-pointer rounded-2xl text-left ${
-            flipped ? "flipped" : ""
-          }`}
-          aria-label="Flip card"
-        >
-          <Face label="Question" text={card.question} />
-          <Face label="Answer" text={card.answer} back />
-        </button>
+      <div className="perspective flex-1">
+        <div className="deck-shadow relative h-full min-h-72">
+          <button
+            onClick={() => setFlipped((f) => !f)}
+            className={`flip-inner absolute inset-0 cursor-pointer rounded-2xl text-left ${
+              flipped ? "flipped" : ""
+            }`}
+            aria-label="Flip card"
+          >
+            <Face label="Question" text={card.question} />
+            <Face label="Answer" text={card.answer} back />
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <Ctrl onClick={() => setFlipped((f) => !f)}>Flip</Ctrl>
-        <Ctrl onClick={prev}>Previous</Ctrl>
-        <Ctrl onClick={next}>Next</Ctrl>
+      <div className="flex flex-wrap items-center gap-2">
+        <Ctrl primary onClick={() => setFlipped((f) => !f)}>
+          Flip
+        </Ctrl>
+        <Ctrl onClick={prev}>← Prev</Ctrl>
+        <Ctrl onClick={next}>Next →</Ctrl>
+        <span className="mx-1 h-6 w-px bg-[var(--line)]" />
         <Ctrl onClick={shuffle}>Shuffle</Ctrl>
         <Ctrl onClick={restart}>Restart</Ctrl>
       </div>
@@ -77,29 +81,36 @@ export default function FlashcardViewer({ cards }: { cards: Flashcard[] }) {
   );
 }
 
-function Face({
-  label,
-  text,
-  back,
-}: {
-  label: string;
-  text: string;
-  back?: boolean;
-}) {
+function Face({ label, text, back }: { label: string; text: string; back?: boolean }) {
   return (
     <div
-      className={`flip-face absolute inset-0 flex flex-col justify-center gap-3 rounded-2xl border border-slate-200 p-8 shadow-sm ${
-        back ? "flip-back bg-indigo-600 text-white" : "bg-white"
+      className={`flip-face absolute inset-0 flex flex-col gap-4 rounded-2xl border p-8 shadow-[0_20px_50px_-20px_rgba(23,23,28,0.4)] ${
+        back
+          ? "flip-back border-transparent bg-[var(--accent)] text-[var(--accent-soft)]"
+          : "index-card border-black/5"
       }`}
     >
       <span
-        className={`text-xs font-semibold uppercase tracking-wide ${
-          back ? "text-indigo-200" : "text-indigo-500"
+        className={`font-mono text-[11px] font-bold uppercase tracking-[0.2em] ${
+          back ? "text-white/60" : "text-[var(--accent)]"
         }`}
       >
         {label}
       </span>
-      <p className="overflow-auto text-lg leading-relaxed">{text}</p>
+      <p
+        className={`overflow-auto font-display leading-relaxed ${
+          back ? "text-xl text-white" : "text-2xl"
+        }`}
+      >
+        {text}
+      </p>
+      <span
+        className={`mt-auto font-mono text-[11px] ${
+          back ? "text-white/40" : "text-[var(--muted)]"
+        }`}
+      >
+        {back ? "click to see question" : "click to reveal answer"}
+      </span>
     </div>
   );
 }
@@ -107,23 +118,35 @@ function Face({
 function Ctrl({
   children,
   onClick,
+  primary,
 }: {
   children: React.ReactNode;
   onClick: () => void;
+  primary?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-95"
+      className={`rounded-lg px-4 py-2 text-sm font-medium transition active:scale-95 ${
+        primary
+          ? "bg-[var(--ink)] text-white hover:bg-black"
+          : "border border-[var(--line)] bg-white/70 text-[var(--ink)] hover:bg-white"
+      }`}
     >
       {children}
     </button>
   );
 }
 
-function Badge({ children }: { children: React.ReactNode }) {
+function Tag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
   return (
-    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+    <span
+      className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${
+        accent
+          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+          : "bg-black/5 text-[var(--muted)]"
+      }`}
+    >
       {children}
     </span>
   );
