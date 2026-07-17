@@ -1,7 +1,12 @@
-import type { Flashcard } from "./types";
+import { FlashcardArraySchema, type Flashcard } from "./types";
+import { extractJson } from "./extract";
 
-// Optional helper: throw this from your integration so the API route can map
-// a message + HTTP status back to the client. Use it or replace it.
+// ponytail: single OpenAI-compatible provider. Swap base URL/model via env;
+// add a provider registry here only when a second provider actually ships.
+const BASE_URL = process.env.LLM_BASE_URL;
+const API_KEY = process.env.LLM_API_KEY;
+const MODEL = process.env.LLM_MODEL;
+
 export class LLMError extends Error {
   status: number;
   constructor(message: string, status = 502) {
@@ -10,19 +15,60 @@ export class LLMError extends Error {
   }
 }
 
-// TODO(candidate): Integrate an OpenAI-compatible chat completions API.
-//
-// Requirements:
-//  - Read LLM_BASE_URL, LLM_API_KEY, LLM_MODEL from process.env (never hardcode).
-//  - POST the prompt to `${LLM_BASE_URL}/chat/completions` with Bearer auth.
-//  - Enforce a request timeout (~60s) via AbortController.
-//  - Handle: missing config, 429 rate limit, non-2xx responses, network
-//    failures, and timeouts — each with a clear message + status.
-//  - The model returns text; extract the JSON array of flashcards from it
-//    (it may wrap the JSON in prose or ```code fences```).
-//  - Validate the parsed cards against the schema in ./types.
-//  - If the JSON is invalid, retry once; if still invalid, throw a clear error.
-//  - Return Flashcard[].
-export async function generateFlashcards(_prompt: string): Promise<Flashcard[]> {
-  throw new Error("Not implemented: integrate the LLM API in lib/llm.ts");
+function parseCards(text: string): Flashcard[] | null {
+  try {
+    return FlashcardArraySchema.parse(JSON.parse(extractJson(text)));
+  } catch {
+    return null;
+  }
+}
+
+async function callOnce(prompt: string): Promise<string> {
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), 60_000);
+  try {
+    const res = await fetch(`${BASE_URL}/chat/completions`, {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.4,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    if (res.status === 429)
+      throw new LLMError("Rate limited by the model provider. Try again shortly.", 429);
+    if (!res.ok)
+      throw new LLMError(`Model provider error (${res.status}).`, 502);
+
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== "string")
+      throw new LLMError("Model returned an unexpected response shape.");
+    return content;
+  } catch (err) {
+    if (err instanceof LLMError) throw err;
+    if (err instanceof Error && err.name === "AbortError")
+      throw new LLMError("The model request timed out. Try again.", 504);
+    throw new LLMError("Network failure contacting the model provider.", 502);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function generateFlashcards(prompt: string): Promise<Flashcard[]> {
+  if (!BASE_URL || !API_KEY || !MODEL)
+    throw new LLMError("Server is missing LLM configuration.", 500);
+
+  // Retry once on invalid JSON.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const cards = parseCards(await callOnce(prompt));
+    if (cards) return cards;
+  }
+  throw new LLMError("The model did not return valid flashcards. Please try again.");
 }

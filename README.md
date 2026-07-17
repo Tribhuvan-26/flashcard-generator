@@ -1,3 +1,5 @@
+<!-- REFERENCE SOLUTION branch. The `main` branch is the starter given to candidates. -->
+
 # Take-Home: AI Flashcard Generator
 
 A Next.js app that turns pasted technical notes into interview flashcards using
