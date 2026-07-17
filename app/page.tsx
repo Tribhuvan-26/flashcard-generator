@@ -18,6 +18,7 @@ export default function Home() {
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showHelp, setShowHelp] = useState(true);
 
   async function generate() {
     setError("");
@@ -45,6 +46,56 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-6xl p-4 sm:p-8">
+      {showHelp && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowHelp(false)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold">👋 Take-home: build the backend</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              The UI is done. Your job is to make <b>Generate Flashcards</b>{" "}
+              actually work by implementing three stubbed files:
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-700">
+              <li>
+                <code className="rounded bg-slate-100 px-1">lib/prompt.ts</code>{" "}
+                — build the LLM prompt from the notes + options.
+              </li>
+              <li>
+                <code className="rounded bg-slate-100 px-1">lib/llm.ts</code> —
+                call an OpenAI-compatible <code>/chat/completions</code> API
+                (timeout, error handling, JSON validation, retry-once).
+              </li>
+              <li>
+                <code className="rounded bg-slate-100 px-1">
+                  app/api/generate/route.ts
+                </code>{" "}
+                — validate input, call the model, return the cards.
+              </li>
+            </ul>
+            <p className="mt-3 text-sm text-slate-600">
+              Setup:{" "}
+              <code className="rounded bg-slate-100 px-1">npm install</code> →
+              copy{" "}
+              <code className="rounded bg-slate-100 px-1">.env.example</code> to{" "}
+              <code className="rounded bg-slate-100 px-1">.env.local</code> and
+              add your own API key. Full details in{" "}
+              <code className="rounded bg-slate-100 px-1">README.md</code>.
+            </p>
+            <button
+              onClick={() => setShowHelp(false)}
+              className="mt-5 w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white transition hover:bg-indigo-700"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="mb-6">
         <h1 className="text-2xl font-bold sm:text-3xl">
           AI Flashcard Generator
